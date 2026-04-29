@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "semantic-stego"
+version = "0.1.0"
+description = "Semantic steganography experiments with YOLO and SVD"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy",
+  "opencv-python",
+  "Pillow",
+  "scikit-image",
+  "pandas",
+  "tqdm",
+  "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+include = ["semantic_stego*"]

@@ -1,29 +1,44 @@
 from __future__ import annotations
 
-import argparse
-from pathlib import Path
+from semantic_stego.config.cli_args import build_parser
+from semantic_stego.config.schemas import ExperimentConfig
+from semantic_stego.experiments.runner import ExperimentRunner
 
-from semantic_stego.data.coco_loader import download_coco_subset
 
-
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Download a small COCO subset from Kaggle.")
-    parser.add_argument("--coco-root", type=Path, default=Path("data/coco"))
-    parser.add_argument("--split", default="val2017")
-    parser.add_argument("--max-images", type=int, default=250)
-    parser.add_argument("--keep-archive", action="store_true")
-    return parser
+def parse_config() -> ExperimentConfig:
+    args = build_parser().parse_args()
+    return ExperimentConfig(
+        coco_root=args.coco_root,
+        split=args.split,
+        output_dir=args.output_dir,
+        max_images=args.max_images,
+        image_size=args.image_size,
+        yolo_model=args.yolo_model,
+        confidence_threshold=args.confidence_threshold,
+        roi_strategies=args.roi_strategies,
+        svd_bands=args.svd_bands,
+        decoders=args.decoders,
+        attacks=args.attacks,
+        jpeg_qualities=args.jpeg_qualities,
+        noise_sigmas=args.noise_sigmas,
+        blur_kernels=args.blur_kernels,
+        payload_text=args.payload_text,
+        payload_bits=args.payload_bits,
+        payload_seed=args.payload_seed,
+        embedding_strength=args.embedding_strength,
+        seed=args.seed,
+        save_images=args.save_images,
+        save_roi_debug=args.save_roi_debug,
+        min_roi_area=args.min_roi_area,
+        skip_no_detection=args.skip_no_detection,
+        payload_policy=args.payload_policy,
+    )
 
 
 def main() -> None:
-    args = build_parser().parse_args()
-    output_dir = download_coco_subset(
-        coco_root=args.coco_root,
-        split=args.split,
-        max_images=args.max_images,
-        keep_archive=args.keep_archive,
-    )
-    print(f"Saved {args.max_images} images to {output_dir}")
+    config = parse_config()
+    runner = ExperimentRunner(config)
+    runner.run()
 
 
 if __name__ == "__main__":

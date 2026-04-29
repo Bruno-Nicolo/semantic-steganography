@@ -15,3 +15,4 @@ outputs/
 htmlcov/
 
 *.log
+*.pt

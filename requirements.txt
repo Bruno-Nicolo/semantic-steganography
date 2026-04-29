@@ -1,0 +1,8 @@
+numpy
+opencv-python
+Pillow
+scikit-image
+pandas
+tqdm
+ultralytics
+pytest
