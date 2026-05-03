@@ -102,6 +102,7 @@ Dipendenze richieste:
 - `Pillow`
 - `scikit-image`
 - `pandas`
+- `matplotlib`
 - `tqdm`
 - `ultralytics`
 - `pytest`
@@ -229,6 +230,33 @@ La pipeline salva, tra le altre:
 - `bpp_roi`, `bpp_image`
 - `yolo_time_ms`, `svd_time_ms`, `embedding_time_ms`, `extraction_time_ms`, `attack_time_ms`, `total_time_ms`
 - `svd_reconstruction_error`
+
+## Analisi risultati
+
+Per aggregare una o piu' run, generare ranking automatici, conclusioni finali e grafici comparativi:
+
+```bash
+python scripts/analyze_results.py outputs/coco_ablation_small
+```
+
+Per confrontare piu' run nello stesso report:
+
+```bash
+python scripts/analyze_results.py outputs/run_a outputs/run_b --analysis-dir outputs/analysis/full_tests
+```
+
+Se non passi path espliciti, lo script prova a scoprire automaticamente tutte le run sotto `outputs/`.
+
+Artifact prodotti in `outputs/analysis/` o nella directory specificata con `--analysis-dir`:
+
+- `consolidated_results.csv`: merge completo di tutte le run
+- `embedding_summary.csv`: confronto per embedding config (`roi_strategy`, `svd_band`)
+- `extraction_summary.csv`: confronto per configurazione di estrazione
+- `attack_summary.csv`: confronto per configurazione e attacco
+- `category_summary.csv`: vista macro per ROI, banda, decoder e attacco
+- `analysis_overview.json`: best config in formato machine-readable
+- `conclusions.md`: conclusioni finali testuali
+- `plots/`: ranking, scatter plot e heatmap comparative
 
 ## YOLO weights
 

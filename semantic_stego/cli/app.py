@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import logging
+
 from semantic_stego.config.cli_args import build_parser
 from semantic_stego.config.schemas import ExperimentConfig
-from semantic_stego.experiments.runner import ExperimentRunner
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def parse_config() -> ExperimentConfig:
@@ -36,8 +40,25 @@ def parse_config() -> ExperimentConfig:
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s", force=True)
+    LOGGER.info("Parsing CLI arguments")
     config = parse_config()
+    LOGGER.info(
+        "Configuration loaded | split=%s | output=%s | max_images=%s | roi=%s | bands=%s | decoders=%s | attacks=%s",
+        config.split,
+        config.output_dir,
+        config.max_images,
+        ", ".join(config.roi_strategies),
+        ", ".join(config.svd_bands),
+        ", ".join(config.decoders),
+        ", ".join(config.attacks),
+    )
+    LOGGER.info("Importing experiment runner")
+    from semantic_stego.experiments.runner import ExperimentRunner
+
+    LOGGER.info("Initializing experiment runner")
     runner = ExperimentRunner(config)
+    LOGGER.info("Starting experiment execution")
     runner.run()
 
 

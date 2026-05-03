@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 from time import perf_counter
 
 import numpy as np
-from ultralytics import YOLO
 
 from semantic_stego.config.schemas import Detection
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class YoloDetector:
@@ -18,7 +21,13 @@ class YoloDetector:
     def _load_model(self):
         if self._model is not None:
             return self._model
+        LOGGER.info("Importing ultralytics YOLO package")
+        from ultralytics import YOLO
+
+        LOGGER.info("Loading YOLO model '%s'", self.model_name)
+        start = perf_counter()
         self._model = YOLO(self.model_name)
+        LOGGER.info("YOLO model '%s' loaded in %.1f ms", self.model_name, (perf_counter() - start) * 1000.0)
         return self._model
 
     def detect(self, image: np.ndarray) -> tuple[list[Detection], float]:

@@ -6,3 +6,4 @@ pandas
 tqdm
 ultralytics
 pytest
+matplotlib
