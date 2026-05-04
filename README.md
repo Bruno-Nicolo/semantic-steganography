@@ -150,19 +150,19 @@ python -m semantic_stego.cli.app \
   --save-roi-debug
 ```
 
-Esempio ablation ridotta:
+Esempio evaluation:
 
 ```bash
 python -m semantic_stego.cli.app \
   --coco-root data/coco \
   --split val2017 \
-  --output-dir outputs/coco_ablation_small \
+  --output-dir outputs/evaluation_50 \
   --max-images 50 \
   --yolo-model yolov8n.pt \
   --roi-strategies largest smallest random full_image \
   --svd-bands high_energy mid_energy low_energy \
   --decoders non_blind blind \
-  --attacks none gaussian_noise gaussian_blur jpeg \
+  --attacks none gaussian_noise gaussian_blur jpeg_compression \
   --noise-sigmas 5 \
   --blur-kernels 3 \
   --jpeg-qualities 90 \
@@ -236,7 +236,7 @@ La pipeline salva, tra le altre:
 Per aggregare una o piu' run, generare ranking automatici, conclusioni finali e grafici comparativi:
 
 ```bash
-python scripts/analyze_results.py outputs/coco_ablation_small
+python scripts/analyze_results.py outputs/evaluation_50
 ```
 
 Per confrontare piu' run nello stesso report:

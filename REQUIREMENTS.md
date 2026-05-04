@@ -557,7 +557,7 @@ tests/
   test_metrics.py
 scripts/
   run_debug.sh
-  run_coco_ablation.sh
+  run_evaluation.sh
 ```
 
 ---
@@ -598,7 +598,7 @@ Esempi di flag:
 --roi-strategies largest smallest random full_image
 --svd-bands high_energy mid_energy low_energy
 --decoders non_blind blind
---attacks none gaussian_noise gaussian_blur jpeg
+--attacks none gaussian_noise gaussian_blur jpeg_compression
 --jpeg-qualities 90 70 50 30
 --noise-sigmas 5 10 20
 --blur-kernels 3 5 7
@@ -1098,7 +1098,7 @@ python -m semantic_stego.cli.app \
   --roi-strategies largest smallest random full_image \
   --svd-bands high_energy mid_energy low_energy \
   --decoders non_blind blind \
-  --attacks none gaussian_noise gaussian_blur jpeg \
+  --attacks none gaussian_noise gaussian_blur jpeg_compression \
   --noise-sigmas 5 \
   --blur-kernels 3 \
   --jpeg-qualities 90 \
@@ -1620,7 +1620,7 @@ python -m semantic_stego.cli.app \
   --roi-strategies largest smallest random full_image \
   --svd-bands high_energy mid_energy low_energy \
   --decoders non_blind blind \
-  --attacks none gaussian_noise gaussian_blur jpeg \
+  --attacks none gaussian_noise gaussian_blur jpeg_compression \
   --noise-sigmas 5 \
   --blur-kernels 3 \
   --jpeg-qualities 90 \
