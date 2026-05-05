@@ -9,6 +9,7 @@ from typing import Any
 
 RESULT_COLUMNS = [
     "run_id", "dataset", "image_id", "image_path", "image_width", "image_height",
+    "image_accepted", "image_filter_reason",
     "roi_strategy", "roi_class_id", "roi_class_name", "roi_confidence", "roi_x1", "roi_y1", "roi_x2", "roi_y2",
     "roi_width", "roi_height", "roi_area", "roi_area_ratio", "num_detections",
     "svd_band", "decoder_type", "embedding_strength", "payload_bits", "payload_text", "payload_seed",

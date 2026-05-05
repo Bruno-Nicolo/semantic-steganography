@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
 
-# Default number of images
-NUM_IMAGES=${1:-200}
-PAYLOAD_TEXT=${2:-CIAO}
-OUTPUT_DIR="outputs/evaluation_${NUM_IMAGES}"
-ANALYSIS_DIR="${OUTPUT_DIR}/analysis"
+set -euo pipefail
+
+NUM_IMAGES=${1:-12}
+PAYLOAD_TEXT=${2:-g}
 PYTHON_BIN="${PYTHON_BIN:-.venv/bin/python}"
 EMBEDDING_STRENGTH=${EMBEDDING_STRENGTH:-20}
 REPETITION_FACTOR=${REPETITION_FACTOR:-3}
+OUTPUT_DIR="outputs/full_comparison_${NUM_IMAGES}"
+ANALYSIS_DIR="${OUTPUT_DIR}/analysis"
 
-# Run evaluation on NUM_IMAGES images with full parameters
+# Full comparison grid:
+# - YOLO-driven ROIs: largest, smallest, random
+# - No-YOLO baseline: full_image
+# - All SVD bands, decoders, and attacks
 "${PYTHON_BIN}" -m semantic_stego.cli.app \
   --coco-root data/coco \
   --split val2017 \
   --output-dir "${OUTPUT_DIR}" \
   --max-images "${NUM_IMAGES}" \
-  --roi-strategies largest \
-  --svd-bands high_energy \
+  --roi-strategies largest smallest random full_image \
+  --svd-bands high_energy mid_energy low_energy \
   --decoders non_blind blind \
   --attacks none gaussian_noise gaussian_blur jpeg_compression \
   --noise-sigmas 5 10 20 \

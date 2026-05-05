@@ -5,7 +5,7 @@ Progetto per esperimenti di steganografia semantica su immagini COCO basato su:
 - rilevamento oggetti con YOLO pretrained;
 - selezione di una ROI semantica;
 - embedding del payload tramite SVD implementata senza usare `np.linalg.svd`;
-- estrazione `non_blind` e baseline `blind`;
+- estrazione `non_blind` coerente con il QIM di embedding e baseline `blind`;
 - valutazione con attacchi, metriche e salvataggio strutturato dei risultati.
 
 ## Obiettivi
@@ -18,6 +18,12 @@ La pipeline permette di confrontare:
 - attacchi: `none`, `gaussian_noise`, `gaussian_blur`, `jpeg_compression`.
 
 Il focus del progetto e' su modularita', riproducibilita' e facilita' di sperimentazione.
+
+Protocollo consigliato per confronti fair tra ROI:
+
+- usare `--payload-text` con una stringa fissa condivisa da tutte le configurazioni;
+- distinguere tra run ottimizzati e run di confronto completo;
+- nel caso di `payload_policy=truncate_message`, accettare un'immagine se esiste almeno una configurazione ROI/banda embeddabile e registrare come failure isolate le combinazioni incompatibili.
 
 ## Struttura del progetto
 
@@ -65,7 +71,7 @@ scripts/
 
 - `payload.py`: conversione testo/bit, generazione casuale e gestione capacita'
 - `embedder.py`: embedding del payload sul canale `Y` in spazio `YCrCb`
-- `extractor.py`: estrazione `non_blind` e `blind`
+- `extractor.py`: estrazione `non_blind` allineata al QIM e baseline `blind`
 
 ### `semantic_stego/attacks`
 
@@ -126,7 +132,7 @@ data/
 Usa la configurazione debug di default:
 
 ```bash
-python main.py
+.venv/bin/python main.py
 ```
 
 ### Avvio tramite CLI
@@ -134,7 +140,7 @@ python main.py
 Esempio debug su 10 immagini:
 
 ```bash
-python -m semantic_stego.cli.app \
+.venv/bin/python -m semantic_stego.cli.app \
   --coco-root data/coco \
   --split val2017 \
   --output-dir outputs/debug \
@@ -146,14 +152,15 @@ python -m semantic_stego.cli.app \
   --attacks none \
   --payload-bits 64 \
   --embedding-strength 10 \
+  --repetition-factor 3 \
   --seed 42 \
   --save-roi-debug
 ```
 
-Esempio evaluation:
+Esempio evaluation completa via CLI:
 
 ```bash
-python -m semantic_stego.cli.app \
+.venv/bin/python -m semantic_stego.cli.app \
   --coco-root data/coco \
   --split val2017 \
   --output-dir outputs/evaluation_50 \
@@ -166,10 +173,19 @@ python -m semantic_stego.cli.app \
   --noise-sigmas 5 \
   --blur-kernels 3 \
   --jpeg-qualities 90 \
-  --payload-bits 128 \
-  --embedding-strength 10 \
+  --payload-text "SEMANTIC_STEGO_TEST" \
+  --embedding-strength 20 \
+  --repetition-factor 3 \
   --seed 42
 ```
+
+Con `--payload-text`, la pipeline usa sempre la stessa stringa per tutte le configurazioni. `--max-images` indica il numero massimo di immagini accettate, non semplicemente lette dal dataset.
+
+### Script consigliati
+
+- `scripts/run_evaluation.sh <N> <payload>`: profilo ottimizzato per ottenere grafici piu' leggibili. Di default usa `roi_strategy=largest`, `svd_band=high_energy`, `embedding_strength=20`, `repetition_factor=3`, lancia anche l'analisi finale e apre la cartella di output.
+- `scripts/run_full_comparison.sh <N> <payload>`: griglia completa per confrontare il ruolo di YOLO (`largest`, `smallest`, `random`) contro la baseline senza YOLO (`full_image`) usando tutte le bande SVD, i decoder e gli attacchi.
+- `scripts/run_clean_sweep.sh <N> <payload>`: sweep clean-only per confrontare `embedding_strength` e `repetition_factor` senza attacchi e scegliere i parametri migliori prima del benchmark completo.
 
 ## Opzioni CLI principali
 
@@ -187,16 +203,24 @@ python -m semantic_stego.cli.app \
 - `--noise-sigmas`: sigma per rumore gaussiano
 - `--blur-kernels`: kernel per blur gaussiano
 - `--jpeg-qualities`: quality JPEG
-- `--payload-text`: payload testuale opzionale
+- `--payload-text`: payload testuale fisso consigliato per confronti fair tra ROI
 - `--payload-bits`: lunghezza payload in bit
 - `--payload-seed`: seed del payload casuale
 - `--embedding-strength`: forza di embedding / delta QIM
+- `--repetition-factor`: numero di ripetizioni per il codice di maggioranza usato in embedding/extraction
 - `--seed`: seed globale per campionamento e ROI random
 - `--min-roi-area`: area minima ROI valida
 - `--payload-policy`: `truncate_message`, `skip_image`, `raise_error`
 - `--skip-no-detection` / `--no-skip-no-detection`: gestione immagini senza detection
 - `--save-images`: salva immagini stego
 - `--save-roi-debug`: salva immagini con ROI disegnata
+
+Note operative su payload e compatibilita':
+
+- con `--payload-text`, il payload viene convertito in bit una sola volta e riusato in tutte le configurazioni;
+- con `payload_policy=truncate_message`, un'immagine viene processata se esiste almeno una configurazione ROI/banda con capacita' utile; le combinazioni incompatibili vengono comunque registrate in output con `status=failed_payload_incompatible`;
+- con policy piu' restrittive come `skip_image` o `raise_error`, la capacita' richiesta resta il payload completo;
+- le immagini completamente scartate vengono tracciate in `results.csv` e `failures.jsonl` con `status=failed_payload_incompatible`.
 
 ## Output della pipeline
 
@@ -222,6 +246,7 @@ Note:
 
 La pipeline salva, tra le altre:
 
+- `image_accepted`, `image_filter_reason`
 - `PSNR_full`, `PSNR_roi`
 - `SSIM_full`, `SSIM_roi`
 - `bit_errors`, `BER`, `exact_match`
@@ -236,13 +261,13 @@ La pipeline salva, tra le altre:
 Per aggregare una o piu' run, generare ranking automatici, conclusioni finali e grafici comparativi:
 
 ```bash
-python scripts/analyze_results.py outputs/evaluation_50
+.venv/bin/python scripts/analyze_results.py outputs/evaluation_50
 ```
 
 Per confrontare piu' run nello stesso report:
 
 ```bash
-python scripts/analyze_results.py outputs/run_a outputs/run_b --analysis-dir outputs/analysis/full_tests
+.venv/bin/python scripts/analyze_results.py outputs/run_a outputs/run_b --analysis-dir outputs/analysis/full_tests
 ```
 
 Se non passi path espliciti, lo script prova a scoprire automaticamente tutte le run sotto `outputs/`.
@@ -257,6 +282,30 @@ Artifact prodotti in `outputs/analysis/` o nella directory specificata con `--an
 - `analysis_overview.json`: best config in formato machine-readable
 - `conclusions.md`: conclusioni finali testuali
 - `plots/`: ranking, scatter plot e heatmap comparative
+
+L'analisi aggregata distingue ora anche:
+
+- `exact_match_rate_all`: exact match su tutte le run di successo;
+- `exact_match_rate_complete`: exact match limitato ai casi con payload completo, senza troncamento;
+- `complete_payload_rate`: quota di run che hanno embeddato tutto il payload richiesto;
+- misure di variabilita' di base come `std` e `sem` per supportare la lettura dei grafici.
+
+## Costi computazionali SVD
+
+Per ROI dense e quasi quadrate, sia la SVD custom sia `np.linalg.svd` hanno costo asintotico cubico in funzione della dimensione della matrice. La differenza pratica e' nelle costanti:
+
+- la pipeline custom costruisce prima la matrice di Gram (`A^T A` oppure `A A^T`);
+- risolve poi una eigendecomposizione simmetrica con `np.linalg.eigh`;
+- completa infine con un passaggio esplicito di ortonormalizzazione delle colonne.
+
+Questo rende la variante custom piu' lenta della SVD standard, ma e' una scelta intenzionale: la pipeline principale privilegia una SVD didattica/autonoma coerente con i vincoli progettuali del repository, mentre `np.linalg.svd` resta solo una baseline di riferimento nei test.
+
+Benchmark locale su 20 matrici casuali `64 x 64`, media su 5 esecuzioni per matrice. L'errore riportato e' l'errore relativo di ricostruzione `||A - USV^T|| / ||A||`.
+
+| Metodo                        | Tempo medio SVD | Dev. std | Errore ricostruzione | Note                |
+| ----------------------------- | --------------: | -------: | -------------------: | ------------------- |
+| SVD custom/eigendecomposition |         6.10 ms |  0.50 ms |            1.24e-14 | pipeline principale |
+| `np.linalg.svd` / standard    |         0.66 ms |  0.05 ms |            2.13e-15 | baseline solo test  |
 
 ## YOLO weights
 

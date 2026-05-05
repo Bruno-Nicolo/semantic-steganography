@@ -13,6 +13,7 @@ DEFAULT_JPEG_QUALITIES = [90, 70, 50, 30]
 DEFAULT_NOISE_SIGMAS = [5, 10, 20]
 DEFAULT_BLUR_KERNELS = [3, 5, 7]
 DEFAULT_PAYLOAD_POLICY = "truncate_message"
+DEFAULT_REPETITION_FACTOR = 3
 DEFAULT_SKIP_NO_DETECTION = True
 DEFAULT_IMAGE_SIZE = 640
 DEFAULT_YOLO_MODEL = "yolov8n.pt"
@@ -38,6 +39,7 @@ def build_default_debug_config() -> ExperimentConfig:
         payload_bits=64,
         payload_seed=42,
         embedding_strength=10.0,
+        repetition_factor=DEFAULT_REPETITION_FACTOR,
         seed=42,
         save_images=False,
         save_roi_debug=True,

@@ -27,6 +27,7 @@ class ExperimentConfig:
     payload_bits: int
     payload_seed: int
     embedding_strength: float
+    repetition_factor: int
     seed: int
     save_images: bool = False
     save_roi_debug: bool = False
@@ -102,6 +103,7 @@ class EmbeddingMetadata:
     band: str
     indices: np.ndarray
     payload_len: int
+    repetition_factor: int
     strength: float
     mode: str
     qim_delta: float

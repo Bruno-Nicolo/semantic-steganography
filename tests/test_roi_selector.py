@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from semantic_stego.config.schemas import Detection
-from semantic_stego.detection.roi_selector import select_roi
+from semantic_stego.detection.roi_selector import select_compatible_rois, select_roi
 
 
 def _detections() -> list[Detection]:
@@ -41,3 +41,24 @@ def test_full_image_returns_whole_image() -> None:
 def test_none_when_no_detection_for_yolo_strategy() -> None:
     roi = select_roi((40, 50, 3), [], "largest", np.random.default_rng(42))
     assert roi is None
+
+
+def test_select_compatible_rois_rejects_smallest_when_payload_does_not_fit() -> None:
+    rois, error = select_compatible_rois((40, 50, 3), _detections(), ["smallest", "full_image"], np.random.default_rng(42), None, 12)
+    assert rois is None
+    assert error is not None
+    assert "smallest" in error
+
+
+def test_select_compatible_rois_accepts_all_strategies_when_payload_fits() -> None:
+    rois, error = select_compatible_rois(
+        (40, 50, 3),
+        _detections(),
+        ["largest", "smallest", "random", "full_image"],
+        np.random.default_rng(42),
+        None,
+        3,
+    )
+    assert error is None
+    assert rois is not None
+    assert set(rois) == {"largest", "smallest", "random", "full_image"}

@@ -47,6 +47,15 @@ def ycrcb_to_rgb(image: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(to_uint8(image), cv2.COLOR_YCrCb2RGB)
 
 
+def rgb_to_gray(image: np.ndarray) -> np.ndarray:
+    return cv2.cvtColor(to_uint8(image), cv2.COLOR_RGB2GRAY)
+
+
+def apply_gray_delta_to_rgb(image: np.ndarray, gray_delta: np.ndarray) -> np.ndarray:
+    output = image.astype(np.float64) + gray_delta[:, :, None]
+    return to_uint8(output)
+
+
 def draw_roi(image: np.ndarray, roi: ROI, color: tuple[int, int, int] = (255, 0, 0)) -> np.ndarray:
     output = image.copy()
     cv2.rectangle(output, (roi.x1, roi.y1), (roi.x2, roi.y2), color, 2)

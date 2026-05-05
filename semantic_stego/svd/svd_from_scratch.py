@@ -38,7 +38,7 @@ def svd_decompose(A: np.ndarray, eps: float = 1e-8) -> tuple[np.ndarray, np.ndar
 
 
 def svd_reconstruct(U: np.ndarray, S: np.ndarray, Vt: np.ndarray) -> np.ndarray:
-    return U @ np.diag(S) @ Vt
+    return (U * S) @ Vt
 
 
 def _orthonormalize_columns(matrix: np.ndarray, eps: float = 1e-10) -> np.ndarray:

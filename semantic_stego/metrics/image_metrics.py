@@ -8,6 +8,8 @@ from semantic_stego.data.image_io import crop_roi
 
 
 def compute_psnr(original: np.ndarray, modified: np.ndarray) -> float:
+    if np.array_equal(original, modified):
+        return float("inf")
     return float(peak_signal_noise_ratio(original, modified, data_range=255))
 
 

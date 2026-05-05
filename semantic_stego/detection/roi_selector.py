@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from semantic_stego.config.schemas import Detection, ROI
+from semantic_stego.svd.svd_utils import roi_svd_capacity
 
 
 def select_roi(
@@ -40,3 +41,25 @@ def select_roi(
         confidence=detection.confidence,
         num_detections=len(detections),
     )
+
+
+def select_compatible_rois(
+    image_shape: tuple[int, int, int],
+    detections: list[Detection],
+    strategies: list[str],
+    rng: np.random.Generator,
+    min_roi_area: int | None,
+    required_capacity: int,
+) -> tuple[dict[str, ROI] | None, str | None]:
+    selected: dict[str, ROI] = {}
+    for strategy in strategies:
+        roi = select_roi(image_shape, detections, strategy, rng, min_roi_area)
+        if roi is None:
+            return None, f"ROI strategy '{strategy}' has no valid detection"
+        capacity = roi_svd_capacity(roi.height, roi.width)
+        if capacity < required_capacity:
+            return None, (
+                f"ROI strategy '{strategy}' capacity {capacity} is below required payload length {required_capacity}"
+            )
+        selected[strategy] = roi
+    return selected, None

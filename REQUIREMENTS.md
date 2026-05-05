@@ -558,6 +558,8 @@ tests/
 scripts/
   run_debug.sh
   run_evaluation.sh
+  run_clean_sweep.sh
+  run_full_comparison.sh
 ```
 
 ---
@@ -605,6 +607,7 @@ Esempi di flag:
 --payload-text "secret message"
 --payload-bits 128
 --embedding-strength 10
+--repetition-factor 3
 --seed 42
 --save-images
 --save-roi-debug
@@ -629,6 +632,7 @@ class ExperimentConfig:
     decoders: list[str]
     attacks: list[str]
     embedding_strength: float
+    repetition_factor: int
     payload_text: str | None
     payload_bits: int
 ```
@@ -1712,4 +1716,3 @@ Metriche: PSNR, SSIM, BER, exact_match, bpp_roi, bpp_image, tempi
 ```
 
 Questa configurazione è sufficiente per realizzare una prima pipeline solida, testabile e poi estendibile.
-
