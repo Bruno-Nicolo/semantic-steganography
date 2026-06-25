@@ -12,7 +12,7 @@ RESULT_COLUMNS = [
     "image_accepted", "image_filter_reason",
     "roi_strategy", "roi_class_id", "roi_class_name", "roi_confidence", "roi_x1", "roi_y1", "roi_x2", "roi_y2",
     "roi_width", "roi_height", "roi_area", "roi_area_ratio", "num_detections",
-    "svd_band", "decoder_type", "embedding_strength", "payload_bits", "payload_text", "payload_seed",
+    "svd_band", "decoder_type", "embedding_strength", "embedding_strength_mode", "embedding_delta_mean", "payload_bits", "payload_text", "payload_seed",
     "payload_bits_requested", "payload_bits_capacity", "payload_bits_embedded", "payload_bits_dropped",
     "payload_retention_ratio", "payload_truncated", "payload_success_ratio", "bpp_roi", "bpp_image",
     "attack_type", "attack_strength", "attack_param_sigma", "attack_param_kernel", "attack_param_quality",

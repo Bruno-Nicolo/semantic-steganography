@@ -39,6 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--payload-bits", type=int, default=128)
     parser.add_argument("--payload-seed", type=int, default=42)
     parser.add_argument("--embedding-strength", type=float, default=10.0)
+    parser.add_argument("--embedding-strength-mode", choices=["absolute", "proportional_singular"], default="absolute")
     parser.add_argument("--repetition-factor", type=int, default=DEFAULT_REPETITION_FACTOR)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--min-roi-area", type=int, default=None)

@@ -30,6 +30,7 @@ def parse_config() -> ExperimentConfig:
         payload_bits=args.payload_bits,
         payload_seed=args.payload_seed,
         embedding_strength=args.embedding_strength,
+        embedding_strength_mode=args.embedding_strength_mode,
         repetition_factor=args.repetition_factor,
         seed=args.seed,
         save_images=args.save_images,
@@ -45,7 +46,7 @@ def main() -> None:
     LOGGER.info("Parsing CLI arguments")
     config = parse_config()
     LOGGER.info(
-        "Configuration loaded | split=%s | output=%s | max_images=%s | roi=%s | bands=%s | decoders=%s | attacks=%s | strength=%s | repetition=%s",
+        "Configuration loaded | split=%s | output=%s | max_images=%s | roi=%s | bands=%s | decoders=%s | attacks=%s | strength=%s | strength_mode=%s | repetition=%s",
         config.split,
         config.output_dir,
         config.max_images,
@@ -54,6 +55,7 @@ def main() -> None:
         ", ".join(config.decoders),
         ", ".join(config.attacks),
         config.embedding_strength,
+        config.embedding_strength_mode,
         config.repetition_factor,
     )
     LOGGER.info("Importing experiment runner")

@@ -6,7 +6,7 @@ import numpy as np
 
 from semantic_stego.config.schemas import EmbeddingMetadata, ExtractionResult
 from semantic_stego.data.image_io import crop_roi, rgb_to_gray, rgb_to_ycrcb
-from semantic_stego.stego.embedder import _nearest_qim_codeword
+from semantic_stego.stego.embedder import _delta_at, _nearest_qim_codeword
 from semantic_stego.svd.svd_from_scratch import svd_decompose
 
 
@@ -47,21 +47,23 @@ class SvdExtractor:
         return S
 
 
-def _decode_qim_bits(values: np.ndarray, delta: float) -> np.ndarray:
+def _decode_qim_bits(values: np.ndarray, delta: float | np.ndarray) -> np.ndarray:
     bits = np.zeros(len(values), dtype=np.uint8)
     for index, value in enumerate(values.astype(float)):
-        even = _nearest_qim_codeword(float(value), delta, 0)
-        odd = _nearest_qim_codeword(float(value), delta, 1)
+        item_delta = _delta_at(delta, index)
+        even = _nearest_qim_codeword(float(value), item_delta, 0)
+        odd = _nearest_qim_codeword(float(value), item_delta, 1)
         bits[index] = np.uint8(0 if abs(value - even) <= abs(value - odd) else 1)
     return bits
 
 
-def _decode_non_blind_bits(values: np.ndarray, original_values: np.ndarray, delta: float) -> np.ndarray:
+def _decode_non_blind_bits(values: np.ndarray, original_values: np.ndarray, delta: float | np.ndarray) -> np.ndarray:
     bits = np.zeros(len(values), dtype=np.uint8)
     for index, original_value in enumerate(original_values.astype(float)):
         observed = float(values[index])
-        even = _nearest_qim_codeword(original_value, delta, 0)
-        odd = _nearest_qim_codeword(original_value, delta, 1)
+        item_delta = _delta_at(delta, index)
+        even = _nearest_qim_codeword(original_value, item_delta, 0)
+        odd = _nearest_qim_codeword(original_value, item_delta, 1)
         bits[index] = np.uint8(0 if abs(observed - even) <= abs(observed - odd) else 1)
     return bits
 

@@ -12,18 +12,18 @@ def roi_svd_capacity(height: int, width: int) -> int:
     return max(0, min(height, width))
 
 
-def select_singular_indices(S: np.ndarray, payload_len: int, band: str, delta: float) -> np.ndarray:
-    candidates = select_eligible_singular_indices(S, band, delta)
+def select_singular_indices(S: np.ndarray, payload_len: int, band: str, delta: float, strength_mode: str = "absolute") -> np.ndarray:
+    candidates = select_eligible_singular_indices(S, band, delta, strength_mode)
     if payload_len <= 0 or len(candidates) == 0:
         return np.array([], dtype=int)
     return candidates[: min(payload_len, len(candidates))]
 
 
-def effective_singular_capacity(S: np.ndarray, band: str, delta: float) -> int:
-    return int(len(select_eligible_singular_indices(S, band, delta)))
+def effective_singular_capacity(S: np.ndarray, band: str, delta: float, strength_mode: str = "absolute") -> int:
+    return int(len(select_eligible_singular_indices(S, band, delta, strength_mode)))
 
 
-def select_eligible_singular_indices(S: np.ndarray, band: str, delta: float) -> np.ndarray:
+def select_eligible_singular_indices(S: np.ndarray, band: str, delta: float, strength_mode: str = "absolute") -> np.ndarray:
     n = len(S)
     if n == 0:
         return np.array([], dtype=int)
@@ -44,10 +44,22 @@ def select_eligible_singular_indices(S: np.ndarray, band: str, delta: float) -> 
     if len(band_indices) == 0:
         return band_indices
 
-    min_sigma = max(float(delta) * MIN_SIGMA_DELTA_FACTOR, 1.0)
-    min_neighbor_gap = float(delta) * MIN_NEIGHBOR_GAP_DELTA_FACTOR
-    eligible = [index for index in band_indices if S[index] >= min_sigma and _has_stable_neighbor_gaps(S, index, min_neighbor_gap)]
+    eligible = []
+    for index in band_indices:
+        item_delta = _singular_delta(S, index, delta, strength_mode)
+        min_sigma = max(item_delta * MIN_SIGMA_DELTA_FACTOR, 1.0)
+        min_neighbor_gap = item_delta * MIN_NEIGHBOR_GAP_DELTA_FACTOR
+        if S[index] >= min_sigma and _has_stable_neighbor_gaps(S, index, min_neighbor_gap):
+            eligible.append(index)
     return np.asarray(eligible, dtype=int)
+
+
+def _singular_delta(S: np.ndarray, index: int, delta: float, strength_mode: str) -> float:
+    if strength_mode == "absolute":
+        return float(delta)
+    if strength_mode == "proportional_singular":
+        return max(float(S[index]) * float(delta), 1e-9)
+    raise ValueError(f"Unsupported embedding strength mode: {strength_mode}")
 
 
 def _has_stable_neighbor_gaps(S: np.ndarray, index: int, min_neighbor_gap: float) -> bool:

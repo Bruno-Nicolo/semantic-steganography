@@ -117,6 +117,7 @@ class ExperimentRunner:
                         payload_bits=payload_bits,
                         band=svd_band,
                         strength=self.config.embedding_strength,
+                        strength_mode=self.config.embedding_strength_mode,
                         mode="qim",
                     )
                 except PayloadCapacityError as exc:
@@ -227,7 +228,7 @@ class ExperimentRunner:
         gray_channel = rgb_to_gray(roi_patch).astype(np.float64)
         _, singular_values, _ = svd_decompose(gray_channel)
         return {
-            band: effective_singular_capacity(singular_values, band, self.config.embedding_strength) // self.embedder.repetition_factor
+            band: effective_singular_capacity(singular_values, band, self.config.embedding_strength, self.config.embedding_strength_mode) // self.embedder.repetition_factor
             for band in self.config.svd_bands
         }
 
@@ -279,6 +280,8 @@ class ExperimentRunner:
             "svd_band": embed_result.metadata.band,
             "decoder_type": decoder_type,
             "embedding_strength": self.config.embedding_strength,
+            "embedding_strength_mode": self.config.embedding_strength_mode,
+            "embedding_delta_mean": embed_result.metadata.strength,
             "payload_bits": self.config.payload_bits,
             "payload_text": payload_text,
             "payload_seed": self.config.payload_seed,
@@ -345,6 +348,7 @@ class ExperimentRunner:
             "svd_band": extras.get("svd_band") or "not_reached",
             "decoder_type": extras.get("decoder_type") or "not_reached",
             "embedding_strength": self.config.embedding_strength,
+            "embedding_strength_mode": self.config.embedding_strength_mode,
             "payload_bits": self.config.payload_bits,
             "payload_text": self.config.payload_text,
             "payload_seed": self.config.payload_seed,

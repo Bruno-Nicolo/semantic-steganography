@@ -25,6 +25,7 @@ class SvdEmbedder:
         payload_bits: np.ndarray,
         band: str,
         strength: float,
+        strength_mode: str = "absolute",
         mode: str = "qim",
     ) -> EmbeddingResult:
         roi_patch = crop_roi(image, roi)
@@ -34,13 +35,13 @@ class SvdEmbedder:
         U, S, Vt = svd_decompose(gray_channel)
         svd_time_ms = (perf_counter() - svd_start) * 1000.0
 
-        symbol_capacity = effective_singular_capacity(S, band, strength)
+        symbol_capacity = effective_singular_capacity(S, band, strength, strength_mode)
         payload_capacity = symbol_capacity // self.repetition_factor
         fitted_bits, truncated, dropped = fit_payload_to_capacity(payload_bits, payload_capacity, self.payload_policy)
         coded_bits = np.repeat(fitted_bits, self.repetition_factor)
-        indices = select_singular_indices(S, len(coded_bits), band, strength)
+        indices = select_singular_indices(S, len(coded_bits), band, strength, strength_mode)
         stego_s = S.copy()
-        delta = float(strength)
+        delta = _resolve_delta(S, indices, strength, strength_mode)
 
         decomposition_error = compute_reconstruction_error(gray_channel, U, S, Vt)
         embed_start = perf_counter()
@@ -57,7 +58,7 @@ class SvdEmbedder:
             indices=indices,
             payload_len=len(fitted_bits),
             repetition_factor=self.repetition_factor,
-            strength=delta,
+            strength=float(np.mean(delta)) if np.size(delta) else float(strength),
             mode=mode,
             qim_delta=delta,
             channel="gray",
@@ -76,11 +77,25 @@ class SvdEmbedder:
         )
 
 
-def _embed_qim_bits(values: np.ndarray, bits: np.ndarray, delta: float) -> np.ndarray:
+def _resolve_delta(S: np.ndarray, indices: np.ndarray, strength: float, strength_mode: str) -> float | np.ndarray:
+    if strength_mode == "absolute":
+        return float(strength)
+    if strength_mode == "proportional_singular":
+        return np.maximum(S[indices].astype(float) * float(strength), 1e-9)
+    raise ValueError(f"Unsupported embedding strength mode: {strength_mode}")
+
+
+def _embed_qim_bits(values: np.ndarray, bits: np.ndarray, delta: float | np.ndarray) -> np.ndarray:
     quantized = values.copy()
     for index, bit in enumerate(bits.astype(int)):
-        quantized[index] = _nearest_qim_codeword(float(quantized[index]), delta, bit)
+        quantized[index] = _nearest_qim_codeword(float(quantized[index]), _delta_at(delta, index), bit)
     return quantized
+
+
+def _delta_at(delta: float | np.ndarray, index: int) -> float:
+    if np.isscalar(delta):
+        return float(delta)
+    return float(delta[index])
 
 
 def _nearest_qim_codeword(value: float, delta: float, bit: int) -> float:

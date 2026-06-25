@@ -27,6 +27,7 @@ class ExperimentConfig:
     payload_bits: int
     payload_seed: int
     embedding_strength: float
+    embedding_strength_mode: str
     repetition_factor: int
     seed: int
     save_images: bool = False
@@ -106,7 +107,7 @@ class EmbeddingMetadata:
     repetition_factor: int
     strength: float
     mode: str
-    qim_delta: float
+    qim_delta: float | np.ndarray
     channel: str = "Y"
 
 

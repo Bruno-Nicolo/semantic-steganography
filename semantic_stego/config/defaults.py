@@ -39,6 +39,7 @@ def build_default_debug_config() -> ExperimentConfig:
         payload_bits=64,
         payload_seed=42,
         embedding_strength=10.0,
+        embedding_strength_mode="absolute",
         repetition_factor=DEFAULT_REPETITION_FACTOR,
         seed=42,
         save_images=False,

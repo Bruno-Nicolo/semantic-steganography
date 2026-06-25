@@ -187,6 +187,56 @@ Con `--payload-text`, la pipeline usa sempre la stessa stringa per tutte le conf
 - `scripts/run_full_comparison.sh <N> <payload>`: griglia completa per confrontare il ruolo di YOLO (`largest`, `smallest`, `random`) contro la baseline senza YOLO (`full_image`) usando tutte le bande SVD, i decoder e gli attacchi.
 - `scripts/run_clean_sweep.sh <N> <payload>`: sweep clean-only per confrontare `embedding_strength` e `repetition_factor` senza attacchi e scegliere i parametri migliori prima del benchmark completo.
 
+## Esempio riproducibile passo-passo
+
+Per generare un esempio completo senza dipendere da COCO o YOLO:
+
+```bash
+.venv/bin/python scripts/reproducible_walkthrough.py \
+  --output-dir outputs/reproducible_walkthrough
+```
+
+Senza `--input-image`, lo script crea un'immagine sintetica deterministica con box riproducibili. Con `--input-image`, invece, le regioni candidate vengono prodotte da YOLO e poi selezionate con la stessa logica della pipeline (`largest`, `smallest`, `full_image`). In entrambi i casi lo script costruisce automaticamente setup didattici per evidenziare quali scelte cambiano davvero il risultato:
+
+| Caso | Scopo |
+| --- | --- |
+| `baseline_success` | mostra la pipeline completa con estrazione corretta |
+| `delta_low_probe` | mostra cosa succede quando Delta e' troppo debole o non produce modifica effettiva |
+| `roi_change_success` | isola l'effetto di cambiare ROI |
+| `band_change_probe` | isola l'effetto di cambiare banda SVD, includendo anche casi in cui il segnale non sopravvive |
+| `blind_decoder_success` | confronta estrazione blind e non-blind |
+
+Output principali:
+
+- `00_original.png`: immagine di partenza
+- `00_detected_sections.png`: tutte le sezioni candidate sull'immagine prima della selezione della ROI
+- `<setup>/01_roi_selected.png`: ROI selezionata
+- `<setup>/04_singular_values_modified.csv`: valori singolari originali, target QIM, valori effettivi dopo embedding e bit associato
+- `<setup>/02_final_stego.png`: immagine finale
+- `<setup>/README.md`: messaggio estratto, BER, exact match, PSNR/SSIM e riferimenti agli artefatti
+- `<setup>/05_contact_sheet.png`: confronto visuale tra originale, ROI, stego e differenza amplificata
+- `comparison_summary.csv`: tabella comparativa con ROI, banda, decoder, Delta, pixel cambiati, delta singolare effettivo, BER ed exact match
+- `manifest.json`: riepilogo machine-readable di tutti i setup
+
+Di default il payload e' la bitstring `10`, scelta per restare embeddabile in tutte le configurazioni dimostrative. Per usare un payload diverso:
+
+```bash
+.venv/bin/python scripts/reproducible_walkthrough.py --payload-bits 1010
+.venv/bin/python scripts/reproducible_walkthrough.py --message "A"
+```
+
+Per usare YOLO su una immagine reale:
+
+```bash
+.venv/bin/python scripts/reproducible_walkthrough.py \
+  --input-image data/coco/val2017/000000000885.jpg \
+  --yolo-model yolov8n.pt \
+  --confidence-threshold 0.25 \
+  --output-dir outputs/reproducible_walkthrough_yolo
+```
+
+Nota: con `--input-image` i valori di Delta vengono scelti provando configurazioni candidate sull'immagine reale. Questo rende l'esempio adatto alla presentazione: almeno i casi `success` vengono cercati automaticamente, mentre il caso `delta_low_probe` resta utile per mostrare un fallimento o una modifica troppo debole.
+
 ## Opzioni CLI principali
 
 - `--coco-root`: root del dataset COCO

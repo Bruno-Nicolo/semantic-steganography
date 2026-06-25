@@ -128,6 +128,7 @@ def main() -> None:
     attack_delta_summary = build_attack_delta_summary(extraction_frame, context.extraction_keys)
 
     category_summary = build_category_summary(extraction_frame)
+    roi_class_summary = build_roi_class_summary(extraction_frame, args.top_n)
     coverage_summary = build_coverage_summary(context.frame)
 
     embedding_summary.to_csv(analysis_dir / "embedding_summary.csv", index=False)
@@ -135,12 +136,13 @@ def main() -> None:
     attack_summary.to_csv(analysis_dir / "attack_summary.csv", index=False)
     attack_delta_summary.to_csv(analysis_dir / "attack_delta_summary.csv", index=False)
     category_summary.to_csv(analysis_dir / "category_summary.csv", index=False)
+    roi_class_summary.to_csv(analysis_dir / "roi_class_summary.csv", index=False)
     coverage_summary.rejection_by_reason.to_csv(analysis_dir / "rejection_summary.csv", index=False)
 
     write_key_metrics_json(analysis_dir, context, embedding_summary, extraction_summary, attack_summary, attack_delta_summary, coverage_summary)
     write_conclusions_markdown(analysis_dir, context, embedding_summary, extraction_summary, attack_summary, attack_delta_summary, coverage_summary, args.top_n)
 
-    generate_plots(plots_dir, context.frame, extraction_summary, attack_summary, attack_delta_summary, category_summary, coverage_summary, context.extraction_keys, args.top_n)
+    generate_plots(plots_dir, context.frame, extraction_summary, attack_summary, attack_delta_summary, category_summary, roi_class_summary, coverage_summary, context.extraction_keys, args.top_n)
 
     print(f"Analyzed {len(run_dirs)} run(s).")
     print(f"Consolidated results: {consolidated_path}")
@@ -442,6 +444,38 @@ def build_category_summary(frame: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def build_roi_class_summary(frame: pd.DataFrame, top_n: int) -> pd.DataFrame:
+    if frame.empty or "roi_class_name" not in frame.columns:
+        return pd.DataFrame()
+    working = frame[frame["roi_class_name"].notna() & frame["roi_class_name"].astype(str).ne("")].copy()
+    if working.empty:
+        return pd.DataFrame()
+
+    class_order = working["roi_class_name"].astype(str).value_counts().head(top_n).index.tolist()
+    working = working[working["roi_class_name"].astype(str).isin(class_order)]
+    rows: list[dict[str, Any]] = []
+    for class_name, group in working.groupby("roi_class_name", dropna=False):
+        success = group[group["is_success"]]
+        rows.append(
+            {
+                "roi_class_name": class_name,
+                "samples_total": int(len(group)),
+                "success_count": int(group["is_success"].sum()),
+                "success_rate": safe_mean(group["is_success"]),
+                "exact_match_rate_all": safe_mean(group["exact_match_bool"]),
+                "exact_match_sem": safe_sem(group["exact_match_bool"]),
+                "BER_mean": safe_mean(success["BER"]) if "BER" in success.columns else float("nan"),
+                "BER_std": safe_std(success["BER"]) if "BER" in success.columns else float("nan"),
+                "payload_success_ratio_mean": safe_mean(success["payload_success_ratio"]) if "payload_success_ratio" in success.columns else float("nan"),
+            }
+        )
+    summary = pd.DataFrame(rows)
+    if summary.empty:
+        return summary
+    summary["frequency_rank"] = summary["roi_class_name"].astype(str).map({name: index + 1 for index, name in enumerate(class_order)})
+    return summary.sort_values("frequency_rank").reset_index(drop=True)
+
+
 def build_attack_delta_summary(frame: pd.DataFrame, extraction_keys: list[str]) -> pd.DataFrame:
     if frame.empty:
         return pd.DataFrame()
@@ -707,6 +741,7 @@ def write_conclusions_markdown(
     lines.append("- `attack_summary.csv`: summary by extraction configuration and attack")
     lines.append("- `attack_delta_summary.csv`: degradation relative to the clean `none` baseline")
     lines.append("- `category_summary.csv`: macro comparison by ROI strategy, SVD band, decoder, attack")
+    lines.append("- `roi_class_summary.csv`: BER and exact-match comparison for the most frequent ROI classes")
     lines.append("- `rejection_summary.csv`: accepted/rejected image coverage by reason")
     lines.append("- `analysis_overview.json`: machine-readable overview of the best configurations")
     lines.append("- `plots/`: comparison charts and heatmaps")
@@ -812,6 +847,7 @@ def generate_plots(
     attack_summary: pd.DataFrame,
     attack_delta_summary: pd.DataFrame,
     category_summary: pd.DataFrame,
+    roi_class_summary: pd.DataFrame,
     coverage_summary: CoverageSummary,
     extraction_keys: list[str],
     top_n: int,
@@ -830,6 +866,9 @@ def generate_plots(
 
     if not category_summary.empty:
         plot_category_bars(plots_dir / "category_comparison.png", category_summary)
+
+    if not roi_class_summary.empty:
+        plot_roi_class_bars(plots_dir / "roi_class_comparison.png", roi_class_summary)
 
     if coverage_summary.image_rows_total > 0:
         plot_coverage_breakdown(plots_dir / "image_coverage.png", coverage_summary)
@@ -990,6 +1029,31 @@ def plot_category_bars(path: Path, frame: pd.DataFrame) -> None:
         for index, (_, row) in enumerate(subset.iterrows()):
             offset = 0.01 if row[metric_column] >= 0 else -0.03
             ax.text(index, row[metric_column] + offset, f"n={int(row['samples_total'])}", ha="center", va="bottom", fontsize=8)
+
+    fig.tight_layout()
+    fig.savefig(path, dpi=180)
+    plt.close(fig)
+
+
+def plot_roi_class_bars(path: Path, frame: pd.DataFrame) -> None:
+    if frame.empty:
+        return
+    labels = frame["roi_class_name"].astype(str).tolist()
+    x = np.arange(len(labels))
+
+    fig, axes = plt.subplots(2, 1, figsize=(max(10, len(labels) * 0.7), 9), sharex=True)
+    axes[0].bar(x, frame["BER_mean"], yerr=frame.get("BER_std"), color="#E15759", capsize=4)
+    axes[0].set_ylabel("Mean BER")
+    axes[0].set_title("Mean BER by frequent ROI class")
+
+    axes[1].bar(x, frame["exact_match_rate_all"], yerr=frame.get("exact_match_sem"), color="#4C78A8", capsize=4)
+    axes[1].set_ylabel("Exact match rate")
+    axes[1].set_title("Exact match by frequent ROI class")
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(labels, rotation=30, ha="right")
+
+    for index, row in frame.iterrows():
+        axes[0].text(index, row["BER_mean"] if not pd.isna(row["BER_mean"]) else 0, f"n={int(row['samples_total'])}", ha="center", va="bottom", fontsize=8)
 
     fig.tight_layout()
     fig.savefig(path, dpi=180)

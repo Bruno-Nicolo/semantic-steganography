@@ -27,6 +27,20 @@ def test_non_blind_recovers_payload_without_attack() -> None:
     embed_result = SvdEmbedder().embed(image, roi, bits, "high_energy", 20.0)
     extracted = SvdExtractor().extract(embed_result.stego_image, embed_result.metadata, image, "non_blind")
     assert np.array_equal(extracted.bits, embed_result.embedded_bits)
+
+
+def test_non_blind_recovers_payload_with_proportional_strength() -> None:
+    image = _image()
+    roi = ROI(0, 0, 64, 64, "full_image", None, "full_image", None, 0)
+    bits = np.array([0, 1, 1, 0], dtype=np.uint8)
+
+    embed_result = SvdEmbedder().embed(image, roi, bits, "high_energy", 0.05, strength_mode="proportional_singular")
+    extracted = SvdExtractor().extract(embed_result.stego_image, embed_result.metadata, image, "non_blind")
+
+    assert np.array_equal(extracted.bits, embed_result.embedded_bits)
+    assert not np.isscalar(embed_result.metadata.qim_delta)
+
+
 def test_blind_recovers_small_payload_clean() -> None:
     image = _image()
     roi = ROI(0, 0, 64, 64, "full_image", None, "full_image", None, 0)
