@@ -118,6 +118,7 @@ class EmbeddingResult:
     embedded_bits: np.ndarray
     requested_bits: int
     svd_time_ms: float
+    numpy_svd_time_ms: float | None
     embedding_time_ms: float
     svd_reconstruction_error: float
     payload_bits_capacity: int

@@ -7,7 +7,7 @@ import numpy as np
 from semantic_stego.config.schemas import EmbeddingMetadata, EmbeddingResult, ROI
 from semantic_stego.data.image_io import apply_gray_delta_to_rgb, crop_roi, paste_roi, rgb_to_gray
 from semantic_stego.stego.payload import fit_payload_to_capacity
-from semantic_stego.svd.svd_from_scratch import svd_decompose, svd_reconstruct
+from semantic_stego.svd.svd_from_scratch import measure_numpy_svd_time_ms, svd_decompose, svd_reconstruct
 from semantic_stego.svd.svd_utils import compute_reconstruction_error, effective_singular_capacity, select_singular_indices
 
 
@@ -34,6 +34,7 @@ class SvdEmbedder:
         svd_start = perf_counter()
         U, S, Vt = svd_decompose(gray_channel)
         svd_time_ms = (perf_counter() - svd_start) * 1000.0
+        numpy_svd_time_ms = measure_numpy_svd_time_ms(gray_channel)
 
         return self.embed_from_decomposition(
             image=image,
@@ -48,6 +49,7 @@ class SvdEmbedder:
             S=S,
             Vt=Vt,
             svd_time_ms=svd_time_ms,
+            numpy_svd_time_ms=numpy_svd_time_ms,
             svd_reconstruction_error=None,
         )
 
@@ -65,6 +67,7 @@ class SvdEmbedder:
         S: np.ndarray,
         Vt: np.ndarray,
         svd_time_ms: float,
+        numpy_svd_time_ms: float | None = None,
         svd_reconstruction_error: float | None = None,
     ) -> EmbeddingResult:
         roi_patch = crop_roi(image, roi)
@@ -102,6 +105,7 @@ class SvdEmbedder:
             embedded_bits=fitted_bits,
             requested_bits=len(payload_bits),
             svd_time_ms=svd_time_ms,
+            numpy_svd_time_ms=numpy_svd_time_ms,
             embedding_time_ms=embedding_time_ms,
             svd_reconstruction_error=decomposition_error,
             payload_bits_capacity=payload_capacity,

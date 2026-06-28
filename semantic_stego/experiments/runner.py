@@ -312,6 +312,7 @@ class ExperimentRunner:
             "embedding_time_ms": embed_result.embedding_time_ms,
             "extraction_time_ms": extract_result.extraction_time_ms,
             "svd_time_ms": embed_result.svd_time_ms,
+            "numpy_svd_time_ms": embed_result.numpy_svd_time_ms,
             "attack_time_ms": attack_time_ms,
             "total_time_ms": total_time_ms,
             "svd_reconstruction_error": embed_result.svd_reconstruction_error,

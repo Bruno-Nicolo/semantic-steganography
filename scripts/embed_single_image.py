@@ -98,6 +98,7 @@ def main() -> None:
         "yolo_time_ms": yolo_time_ms,
         "embedding_time_ms": result.embedding_time_ms,
         "svd_time_ms": result.svd_time_ms,
+        "numpy_svd_time_ms": result.numpy_svd_time_ms,
         "svd_reconstruction_error": result.svd_reconstruction_error,
         "metrics": compute_roi_metrics(image, result.stego_image, roi),
     }

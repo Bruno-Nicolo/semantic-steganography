@@ -22,7 +22,7 @@ from semantic_stego.metrics.message_metrics import bit_error_rate, bit_errors, e
 from semantic_stego.stego.embedder import SvdEmbedder
 from semantic_stego.stego.extractor import SvdExtractor
 from semantic_stego.stego.payload import PayloadCapacityError, random_bits
-from semantic_stego.svd.svd_from_scratch import svd_decompose
+from semantic_stego.svd.svd_from_scratch import measure_numpy_svd_time_ms, svd_decompose
 from semantic_stego.svd.svd_utils import compute_reconstruction_error, effective_singular_capacity
 
 LOGGER = logging.getLogger(__name__)
@@ -41,6 +41,7 @@ class RoiSvdCache:
     S: np.ndarray
     Vt: np.ndarray
     svd_time_ms: float
+    numpy_svd_time_ms: float
     reconstruction_error: float
 
 
@@ -176,6 +177,7 @@ class EfficientSweepRunner:
                                 S=cache.S,
                                 Vt=cache.Vt,
                                 svd_time_ms=cache.svd_time_ms,
+                                numpy_svd_time_ms=cache.numpy_svd_time_ms,
                                 svd_reconstruction_error=cache.reconstruction_error,
                             )
                         except PayloadCapacityError as exc:
@@ -288,8 +290,9 @@ class EfficientSweepRunner:
             svd_start = perf_counter()
             U, S, Vt = svd_decompose(gray_channel)
             svd_time_ms = (perf_counter() - svd_start) * 1000.0
+            numpy_svd_time_ms = measure_numpy_svd_time_ms(gray_channel)
             reconstruction_error = compute_reconstruction_error(gray_channel, U, S, Vt)
-            caches[strategy] = RoiSvdCache(gray_channel, U, S, Vt, svd_time_ms, reconstruction_error)
+            caches[strategy] = RoiSvdCache(gray_channel, U, S, Vt, svd_time_ms, numpy_svd_time_ms, reconstruction_error)
         return caches
 
     def _capacity_is_usable(self, capacity: int, requested_payload_bits: int) -> bool:
@@ -387,6 +390,7 @@ class EfficientSweepRunner:
             "embedding_time_ms": embed_result.embedding_time_ms,
             "extraction_time_ms": extract_result.extraction_time_ms,
             "svd_time_ms": embed_result.svd_time_ms,
+            "numpy_svd_time_ms": embed_result.numpy_svd_time_ms,
             "attack_time_ms": attack_time_ms,
             "total_time_ms": total_time_ms,
             "svd_reconstruction_error": embed_result.svd_reconstruction_error,

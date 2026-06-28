@@ -17,7 +17,7 @@ RESULT_COLUMNS = [
     "payload_retention_ratio", "payload_truncated", "payload_success_ratio", "bpp_roi", "bpp_image",
     "attack_type", "attack_strength", "attack_param_sigma", "attack_param_kernel", "attack_param_quality",
     "PSNR_full", "PSNR_roi", "SSIM_full", "SSIM_roi", "bit_errors", "total_bits", "BER", "exact_match",
-    "character_accuracy", "yolo_time_ms", "embedding_time_ms", "extraction_time_ms", "svd_time_ms", "attack_time_ms",
+    "character_accuracy", "yolo_time_ms", "embedding_time_ms", "extraction_time_ms", "svd_time_ms", "numpy_svd_time_ms", "attack_time_ms",
     "total_time_ms", "svd_reconstruction_error", "status", "error_message",
 ]
 

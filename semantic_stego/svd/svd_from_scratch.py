@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from time import perf_counter
+
 import numpy as np
 
 
@@ -39,6 +41,13 @@ def svd_decompose(A: np.ndarray, eps: float = 1e-8) -> tuple[np.ndarray, np.ndar
 
 def svd_reconstruct(U: np.ndarray, S: np.ndarray, Vt: np.ndarray) -> np.ndarray:
     return (U * S) @ Vt
+
+
+def measure_numpy_svd_time_ms(A: np.ndarray) -> float:
+    matrix = np.asarray(A, dtype=np.float64)
+    start = perf_counter()
+    np.linalg.svd(matrix, full_matrices=False)
+    return (perf_counter() - start) * 1000.0
 
 
 def _orthonormalize_columns(matrix: np.ndarray, eps: float = 1e-10) -> np.ndarray:

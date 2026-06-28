@@ -51,6 +51,7 @@ SUCCESS_METRICS = [
     "embedding_time_ms",
     "extraction_time_ms",
     "svd_time_ms",
+    "numpy_svd_time_ms",
     "attack_time_ms",
     "total_time_ms",
     "svd_reconstruction_error",
