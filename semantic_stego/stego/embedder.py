@@ -35,6 +35,39 @@ class SvdEmbedder:
         U, S, Vt = svd_decompose(gray_channel)
         svd_time_ms = (perf_counter() - svd_start) * 1000.0
 
+        return self.embed_from_decomposition(
+            image=image,
+            roi=roi,
+            payload_bits=payload_bits,
+            band=band,
+            strength=strength,
+            strength_mode=strength_mode,
+            mode=mode,
+            gray_channel=gray_channel,
+            U=U,
+            S=S,
+            Vt=Vt,
+            svd_time_ms=svd_time_ms,
+            svd_reconstruction_error=None,
+        )
+
+    def embed_from_decomposition(
+        self,
+        image: np.ndarray,
+        roi: ROI,
+        payload_bits: np.ndarray,
+        band: str,
+        strength: float,
+        strength_mode: str,
+        mode: str,
+        gray_channel: np.ndarray,
+        U: np.ndarray,
+        S: np.ndarray,
+        Vt: np.ndarray,
+        svd_time_ms: float,
+        svd_reconstruction_error: float | None = None,
+    ) -> EmbeddingResult:
+        roi_patch = crop_roi(image, roi)
         symbol_capacity = effective_singular_capacity(S, band, strength, strength_mode)
         payload_capacity = symbol_capacity // self.repetition_factor
         fitted_bits, truncated, dropped = fit_payload_to_capacity(payload_bits, payload_capacity, self.payload_policy)
@@ -43,7 +76,7 @@ class SvdEmbedder:
         stego_s = S.copy()
         delta = _resolve_delta(S, indices, strength, strength_mode)
 
-        decomposition_error = compute_reconstruction_error(gray_channel, U, S, Vt)
+        decomposition_error = compute_reconstruction_error(gray_channel, U, S, Vt) if svd_reconstruction_error is None else svd_reconstruction_error
         embed_start = perf_counter()
         stego_s[indices] = _embed_qim_bits(stego_s[indices], coded_bits, delta)
         stego_gray = np.clip(np.rint(svd_reconstruct(U, stego_s, Vt)), 0, 255)
